@@ -1,0 +1,121 @@
+import java.util.Scanner;
+import java.util.Stack;
+import java.util.StringTokenizer;
+
+class Parser{
+    private String operators = "u+-*/";
+    private String delimiters = operators + "( )";
+    public boolean correct = true;
+    private boolean isOperator(String x){
+        if(x.length() != 1) return false;
+        for(int i = 0; i < operators.length(); i++){
+            if(x.charAt(0) == operators.charAt(i)) return true;
+        }
+        return false;
+    }
+    private boolean isDelimiter(String x){
+        if(x.length() != 1) return false;
+        for(int i = 0; i < delimiters.length(); i++){
+            if(x.charAt(0) == delimiters.charAt(i)) return true;
+        }
+        return false;
+    }
+    private int priority(String x) {
+        if (x.equals("(")) return 1;
+        if (x.equals("+") || x.equals("-")) return 2;
+        if (x.equals("*") || x.equals("/")) return 3;
+        return 4;
+    }
+    public String parse(String data) {
+        String primer = "";
+        Stack stack = new Stack();
+        StringTokenizer tokenizer = new StringTokenizer(data, delimiters, true);
+        String pred = "", tek = "";
+        while (tokenizer.hasMoreTokens()) {
+            tek = tokenizer.nextToken();
+            if (!tokenizer.hasMoreTokens() && isOperator(tek)) {
+                primer = ("Некорректное выражение.");
+                correct = false;
+                return primer;
+            }
+            if (tek.equals(" ")) continue;
+            if (isDelimiter(tek)) {
+                if (tek.equals("(")) stack.push(tek);
+                else if (tek.equals(")")) {
+                    while (!stack.peek().equals("(")) {
+                        primer += stack.pop().toString() + " ";
+                        if (stack.isEmpty()) {
+                            primer = ("Скобки не согласованы.");
+                            correct = false;
+                            return primer;
+                        }
+                    }
+                    stack.pop();
+                }else {
+                    if (tek.equals("-") && (pred.equals("") || (isDelimiter(pred)  && !pred.equals(")")))) {
+                        tek = "u";
+                    }else{
+                        while (!stack.isEmpty() && (priority(tek) <= priority(stack.peek().toString()))) {
+                            primer += stack.pop().toString()  + " ";
+                        }
+
+                    }
+                    stack.push(tek);
+                }
+
+            }else {
+                primer += tek + " ";
+            }
+            pred = tek;
+        }
+        while (!stack.isEmpty()) {
+            if (isOperator(stack.peek().toString())) primer += stack.pop().toString() + " ";
+            else {
+                primer = "Скобки не согласованы.";
+                correct = false;
+                return primer;
+            }
+        }
+        return primer;
+    }
+    public double Calculator(String postfix) {
+        if(!correct) return 0;
+        Stack stack = new Stack();
+        for (int i = 0; i < postfix.length() ; i++) {
+            if(postfix.charAt(i) == ' ') continue;
+            if (postfix.charAt(i) == '+') stack.push(Double.valueOf(stack.pop().toString()) + Double.valueOf(stack.pop().toString()));
+            else if (postfix.charAt(i) == '-') {
+                double b = Double.valueOf(stack.pop().toString()), a = Double.valueOf(stack.pop().toString());
+                stack.push(a - b);
+            }
+            else if (postfix.charAt(i) == '*') stack.push(Double.valueOf(stack.pop().toString()) * Double.valueOf(stack.pop().toString()));
+            else if (postfix.charAt(i) == '/') {
+                double b = Double.valueOf(stack.pop().toString()), a = Double.valueOf(stack.pop().toString());
+                stack.push(a / b);
+            }
+            else if (postfix.charAt(i) == 'u') stack.push(-Double.valueOf(stack.pop().toString()));
+            else{
+                int g = postfix.indexOf(' ',i);
+                stack.push(Double.valueOf(postfix.substring(i, g)));
+                i = g;
+            }
+        }
+        return Double.valueOf(stack.pop().toString());
+    }
+}
+
+public class Calculation {
+    public static void main(String[] args) {
+        System.out.println("Введите данные:");
+        Scanner in = new Scanner(System.in);
+        String primer = in.nextLine();
+        Parser parser = new Parser();
+        primer = parser.parse(primer);
+        if(parser.correct){
+            System.out.println(primer);
+            System.out.println(parser.Calculator(primer));
+        }else{
+            System.out.println("Ошибка:"+primer);
+        }
+    }
+}
